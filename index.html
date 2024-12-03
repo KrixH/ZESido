@@ -37,10 +37,13 @@
             font-size: 1.1em;
         }
 
+        input[type="time"], input[type="checkbox"] {
+            margin-bottom: 20px;
+        }
+
         input[type="time"] {
             width: 100%;
             padding: 10px;
-            margin-bottom: 20px;
             border: 1px solid #444;
             border-radius: 5px;
             background-color: #3b3b3b;
@@ -85,10 +88,13 @@
         <input type="time" id="time1" required>
         <label for="time2">Második időpont:</label>
         <input type="time" id="time2" required>
+        <label>
+            <input type="checkbox" id="subtract30"> Vonj ki 30 percet
+        </label>
         <button type="submit">Számítás</button>
     </form>
     <h2>Eredmény:</h2>
-    <p id="result">Adjon meg két időpontot!</p>
+    <p id="result">Adj meg két időpontot!</p>
 
     <script>
         function calculateTimeDifference(event) {
@@ -97,9 +103,10 @@
             // Az időpontok beolvasása
             const time1 = document.getElementById("time1").value;
             const time2 = document.getElementById("time2").value;
+            const subtract30 = document.getElementById("subtract30").checked;
 
             if (!time1 || !time2) {
-                document.getElementById("result").textContent = "Kérem, adjon meg két időpontot!";
+                document.getElementById("result").textContent = "Kérlek, adj meg két időpontot!";
                 return;
             }
 
@@ -115,6 +122,12 @@
 
             if (diffInMinutes < 0) {
                 diffInMinutes += 24 * 60; // Ha átnyúlik a következő napra
+            }
+
+            // Ha a checkbox be van pipálva, vonjon ki 30 percet
+            if (subtract30) {
+                diffInMinutes -= 30;
+                if (diffInMinutes < 0) diffInMinutes = 0; // Negatív érték ne legyen
             }
 
             // Órákra és percekre bontás
