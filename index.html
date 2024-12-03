@@ -51,8 +51,10 @@
             const minutes = diffInMinutes % 60;
 
             // Eredmény kiírása
-            document.getElementById("result").textContent = `Eltelt idő: ${hours} óra és ${minutes} perc.`;
+            document.getElementById("result").textContent = 
+                `Eltelt idő: ${hours} óra és ${minutes} perc, vagy összesen ${diffInMinutes} perc.`;
         }
     </script>
 </body>
 </html>
+
