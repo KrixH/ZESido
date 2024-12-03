@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Idő Különbség Számoló</title>
+</head>
+<body>
+    <h1>Idő Különbség Számoló</h1>
+    <form onsubmit="calculateTimeDifference(event)">
+        <label for="time1">Első időpont:</label>
+        <input type="time" id="time1" required>
+        <br><br>
+        <label for="time2">Második időpont:</label>
+        <input type="time" id="time2" required>
+        <br><br>
+        <button type="submit">Számítás</button>
+    </form>
+    <h2>Eredmény:</h2>
+    <p id="result">Adjon meg két időpontot!</p>
+
+    <script>
+        function calculateTimeDifference(event) {
+            event.preventDefault();
+
+            // Az időpontok beolvasása
+            const time1 = document.getElementById("time1").value;
+            const time2 = document.getElementById("time2").value;
+
+            if (!time1 || !time2) {
+                document.getElementById("result").textContent = "Kérem, adjon meg két időpontot!";
+                return;
+            }
+
+            // Időpontok Date objektumba alakítása
+            const [hours1, minutes1] = time1.split(":").map(Number);
+            const [hours2, minutes2] = time2.split(":").map(Number);
+
+            const date1 = new Date(0, 0, 0, hours1, minutes1);
+            const date2 = new Date(0, 0, 0, hours2, minutes2);
+
+            // Különbség kiszámítása percekben
+            let diffInMinutes = (date2 - date1) / (1000 * 60);
+
+            if (diffInMinutes < 0) {
+                diffInMinutes += 24 * 60; // Ha átnyúlik a következő napra
+            }
+
+            // Órákra és percekre bontás
+            const hours = Math.floor(diffInMinutes / 60);
+            const minutes = diffInMinutes % 60;
+
+            // Eredmény kiírása
+            document.getElementById("result").textContent = `Eltelt idő: ${hours} óra és ${minutes} perc.`;
+        }
+    </script>
+</body>
+</html>
