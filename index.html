@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Idő Különbség Számoló</title>
+    <title>MTTR - KrixH</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -79,6 +79,12 @@
             background-color: #e69500;
         }
 
+        #clear-log {
+            margin-top: 10px;
+            background-color: #ff4c4c;
+            width: 10%;
+        }
+
         h2 {
             margin-top: 20px;
             color: #ffa500;
@@ -97,15 +103,51 @@
             box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.5);
             box-sizing: border-box;
         }
+
+        table {
+            width: 90%;
+            max-width: 600px;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+
+        table, th, td {
+            border: 1px solid #444;
+        }
+
+        th, td {
+            padding: 10px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #3b3b3b;
+        }
+
+        td {
+            background-color: #2b2b2b;
+        }
+
+        #log-message {
+            color: #ff4c4c;
+            margin-top: 10px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .total-row td {
+            font-weight: bold;
+            color: #ffa500;
+        }
     </style>
 </head>
 <body>
     <h1>Idő Különbség Számoló</h1>
     <form onsubmit="calculateTimeDifference(event)">
         <label for="time1">Első időpont:</label>
-        <input type="time" id="time1" required>
+        <input type="time" id="time1" required min="00:00" max="23:59" step="60">
         <label for="time2">Második időpont:</label>
-        <input type="time" id="time2" required>
+        <input type="time" id="time2" required min="00:00" max="23:59" step="60">
         <div class="checkbox-container">
             <input type="checkbox" id="subtract30">
             <label for="subtract30" style="margin: 0;">Vonj ki 30 percet</label>
@@ -114,12 +156,48 @@
     </form>
     <h2>Eredmény:</h2>
     <p id="result">Adj meg két időpontot!</p>
+    <h2>Napi Log:</h2>
+    <table id="log-table">
+        <thead>
+            <tr>
+                <th>Első idő</th>
+                <th>Második idő</th>
+                <th>Összes perc</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+        <tfoot>
+            <tr class="total-row">
+                <td colspan="2">Napi összes:</td>
+                <td id="total-minutes">0</td>
+            </tr>
+        </tfoot>
+    </table>
+    <p id="log-message"></p>
+    <button id="clear-log" onclick="clearLog()">Log törlése</button>
 
     <script>
+        let dailyTotal = 0;
+
+        function loadLog() {
+            const log = JSON.parse(localStorage.getItem("dailyLog")) || [];
+            const logTableBody = document.getElementById("log-table").querySelector("tbody");
+            logTableBody.innerHTML = "";
+            dailyTotal = 0;
+
+            log.forEach(entry => {
+                addLogRow(entry.time1, entry.time2, entry.diffInMinutes, entry.subtracted);
+                dailyTotal += entry.diffInMinutes;
+            });
+
+            updateTotalRow();
+            updateLogMessage();
+        }
+
         function calculateTimeDifference(event) {
             event.preventDefault();
 
-            // Az időpontok beolvasása
             const time1 = document.getElementById("time1").value;
             const time2 = document.getElementById("time2").value;
             const subtract30 = document.getElementById("subtract30").checked;
@@ -129,34 +207,77 @@
                 return;
             }
 
-            // Időpontok Date objektumba alakítása
             const [hours1, minutes1] = time1.split(":").map(Number);
             const [hours2, minutes2] = time2.split(":").map(Number);
 
             const date1 = new Date(0, 0, 0, hours1, minutes1);
             const date2 = new Date(0, 0, 0, hours2, minutes2);
 
-            // Különbség kiszámítása percekben
             let diffInMinutes = (date2 - date1) / (1000 * 60);
-
             if (diffInMinutes < 0) {
-                diffInMinutes += 24 * 60; // Ha átnyúlik a következő napra
+                diffInMinutes += 24 * 60;
             }
 
-            // Ha a checkbox be van pipálva, vonjon ki 30 percet
+            let subtracted = "";
             if (subtract30) {
                 diffInMinutes -= 30;
-                if (diffInMinutes < 0) diffInMinutes = 0; // Negatív érték ne legyen
+                if (diffInMinutes < 0) diffInMinutes = 0;
+                subtracted = "(-30p szünet)";
             }
 
-            // Órákra és percekre bontás
+            dailyTotal += diffInMinutes;
+            addLogRow(time1, time2, diffInMinutes, subtracted);
+            saveLog(time1, time2, diffInMinutes, subtracted);
+            updateTotalRow();
+
             const hours = Math.floor(diffInMinutes / 60);
             const minutes = diffInMinutes % 60;
 
-            // Eredmény kiírása
             document.getElementById("result").textContent = 
                 `Eltelt idő: ${hours} óra és ${minutes} perc, vagy összesen ${diffInMinutes} perc.`;
         }
+
+        function addLogRow(time1, time2, diffInMinutes, subtracted) {
+            const logTableBody = document.getElementById("log-table").querySelector("tbody");
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                <td>${time1}</td>
+                <td>${time2}</td>
+                <td>${diffInMinutes} ${subtracted}</td>
+            `;
+            logTableBody.appendChild(row);
+            updateLogMessage();
+        }
+
+        function updateTotalRow() {
+            const totalMinutesCell = document.getElementById("total-minutes");
+            totalMinutesCell.textContent = dailyTotal;
+        }
+
+        function saveLog(time1, time2, diffInMinutes, subtracted) {
+            const log = JSON.parse(localStorage.getItem("dailyLog")) || [];
+            log.push({ time1, time2, diffInMinutes, subtracted });
+            localStorage.setItem("dailyLog", JSON.stringify(log));
+        }
+
+        function updateLogMessage() {
+            const logMessage = document.getElementById("log-message");
+            if (dailyTotal > 480) {
+                logMessage.textContent = "Figyelem: A napi idő meghaladta a 480 percet!";
+            } else {
+                logMessage.textContent = "";
+            }
+        }
+
+        function clearLog() {
+            localStorage.removeItem("dailyLog");
+            document.getElementById("log-table").querySelector("tbody").innerHTML = "";
+            dailyTotal = 0;
+            updateTotalRow();
+            updateLogMessage();
+        }
+
+        document.addEventListener("DOMContentLoaded", loadLog);
     </script>
 </body>
 </html>
